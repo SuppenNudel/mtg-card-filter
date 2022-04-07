@@ -50,9 +50,14 @@ public class CardValueFactory {
 		return null;
 	}
 
+	public static CardObject getScryfallCard(String cardName) {
+		return scryfallCards.get(cardName);
+	}
+
 	public static final CardValueStrategy<Integer> quantity = new IntegerValueStrategy("#", CollectionCard::getQuantity);
 	public static final CardValueStrategy<String> setCode = new StringValueStrategy("Set Code", card -> {
 		String setCode = card.getSetCode();
+		// Guild Kit Workaround
 		return setCode.startsWith("GK") ? setCode.replaceAll("_.+$", "") : setCode;
 	});
 	public static final CardValueStrategy<String> cardNumber = new StringValueStrategy("Card Number", CollectionCard::getCardNumber);
@@ -81,6 +86,19 @@ public class CardValueFactory {
 	});
 
 	public static final List<CardValueStrategy<? extends Object>> allCardValues = Arrays.asList(price, type, cmc, edhrecRank, name, folder, colorId);
-//	public static final ListValueStrategy<CollectionCard, List<Integer>> score = new ListValueStrategy<>("Staple Score", card -> MtgTop8Scores.getScore(card.getCardName()));
+//	public static final CardValueStrategy<List<Integer>> score = new ListValueStrategy<>("Staple Score", card -> {
+//		String cardName = card.getCardName();
+//		List<CompLevel> compLevels = UserConfig.getConfig().getList(UserConfigKey.COMP_LEVELS, CompLevel.class);
+//		List<MtgTop8Format> formats = UserConfig.getConfig().getList(UserConfigKey.FORMATS, MtgTop8Format.class);
+//		Integer monthsAgo = UserConfig.getConfig().get(UserConfigKey.TIME_PERIOD);
+//		ChronoUnit timeUnit = UserConfig.getConfig().get(UserConfigKey.TIME_UNIT);
+//		LocalDate startDate = LocalDate.now().minus(monthsAgo, timeUnit);
+//		List<Integer> scores = new ArrayList<>();
+//		for (MtgTop8Format format : formats) {
+//			IntegerProperty score = MtgTop8Scores.getScore(cardName, compLevels, format, startDate);
+//			scores.add(score.get());
+//		}
+//		return scores;
+//	}, Integer::parseInt);
 
 }

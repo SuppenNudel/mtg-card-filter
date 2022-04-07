@@ -11,8 +11,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<!-- <mainClass>${project.groupId}.${project.artifactId}.App</mainClass> -->
-		<mainclass>com.rohm.mtg.utils.cardmanager.App</mainclass>
+		<javafx.version>11.0.2</javafx.version>
+		<mainclass.launcher>${project.groupId}.${project.artifactId}.Launcher</mainclass.launcher>
+		<mainclass.app>${project.groupId}.${project.artifactId}.App</mainclass.app>
 	</properties>
 
 	<dependencies>
@@ -42,6 +43,34 @@
 			<artifactId>mtgtop8-rest-api</artifactId>
 			<version>0.3.2</version>
 		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-fxml</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
+		<!-- <dependency> -->
+		<!-- <groupId>org.openjfx</groupId> -->
+		<!-- <artifactId>javafx-graphics</artifactId> -->
+		<!-- <version>${javafx.version}</version> -->
+		<!-- <classifier>win</classifier> -->
+		<!-- </dependency> -->
+		<!-- <dependency> -->
+		<!-- <groupId>org.openjfx</groupId> -->
+		<!-- <artifactId>javafx-graphics</artifactId> -->
+		<!-- <version>${javafx.version}</version> -->
+		<!-- <classifier>linux</classifier> -->
+		<!-- </dependency> -->
+		<!-- <dependency> -->
+		<!-- <groupId>org.openjfx</groupId> -->
+		<!-- <artifactId>javafx-graphics</artifactId> -->
+		<!-- <version>${javafx.version}</version> -->
+		<!-- <classifier>mac</classifier> -->
+		<!-- </dependency> -->
 		<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -70,26 +99,33 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-maven-plugin</artifactId>
+				<version>0.0.8</version>
+				<configuration>
+					<mainClass>${mainclass.app}</mainClass>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.3.0</version>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.0</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
 						<goals>
-							<goal>single</goal>
+							<goal>shade</goal>
 						</goals>
 						<configuration>
-							<appendAssemblyId>false</appendAssemblyId>
-							<archive>
-								<manifest>
-<!-- 									<addClasspath>true</addClasspath> -->
-									<mainClass>${mainclass}</mainClass>
-								</manifest>
-							</archive>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>project-classifier</shadedClassifierName>
+							<outputFile>shade\${project.artifactId}.jar</outputFile>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>${mainclass.launcher}</mainClass>
+								</transformer>
+							</transformers>
 						</configuration>
 					</execution>
 				</executions>

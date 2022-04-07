@@ -23,12 +23,18 @@ import com.rohm.mtg.utils.dragonshield.DragonShieldReaderFactory;
 import com.rohm.mtg.utils.dragonshield.DragonShieldReaderFactory.CollectionReader;
 import com.rohm.mtg.utils.dragonshield.collection.CollectionCard;
 
+import de.rohmio.mtg.mtgtop8.api.endpoints.SearchEndpoint;
 import de.rohmio.mtg.mtgtop8.api.model.CompLevel;
 import de.rohmio.mtg.mtgtop8.api.model.MtgTop8Format;
+import de.rohmio.mtg.scryfall.api.model.CardObject;
+import de.rohmio.mtg.scryfall.api.model.enums.Format;
+import de.rohmio.mtg.scryfall.api.model.enums.Legality;
 import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -40,6 +46,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
@@ -86,8 +93,9 @@ public class PrimaryController implements Initializable {
 			cardTable.getColumns().add(column);
 		});
 
+		// TODO instead of double click use context menu
 		// on row double click -> open card on scryfall
-		cardTable.setRowFactory(tv -> {
+		cardTable.setRowFactory(tableView -> {
 			TableRow<CollectionCard> row = new TableRow<>();
 			row.setOnMouseClicked(event -> {
 				if (event.getClickCount() == 2 && (!row.isEmpty())) {
@@ -169,7 +177,7 @@ public class PrimaryController implements Initializable {
 	private void loadCardManagerFile() throws IOException {
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setTitle("Choose Dragon Shield Card Manager File");
-		fileChooser.setInitialDirectory(new File("src/test/resources"));
+//		fileChooser.setInitialDirectory(new File("src/test/resources"));
 		fileChooser.getExtensionFilters().add(new ExtensionFilter("CSV-File", "*.csv"));
 		File file = fileChooser.showOpenDialog(App.primaryStage());
 		if (file != null) {
@@ -205,11 +213,63 @@ public class PrimaryController implements Initializable {
 		for (MtgTop8Format format : formats) {
 			TableColumn<CollectionCard, Integer> columnScore = new TableColumn<>(format.name());
 			columnScore.setCellValueFactory(param -> {
-				if(scanToggle.isSelected()) {
-					return MtgTop8Scores
-							.getScore(param.getValue().getCardName(), compLevels, format, startDate).asObject();
+				CollectionCard collectionCard = param.getValue();
+				CardObject scryfallCard = CardValueFactory.getScryfallCard(collectionCard.getCardName());
+				Format scryfallFormat = Format.valueOf(format.toString());
+				Legality legality = scryfallCard.getLegalities().get(scryfallFormat);
+
+				IntegerProperty score = new SimpleIntegerProperty(-1);
+
+				if(legality == Legality.BANNED) {
+					score.set(-4);
+				} else if(legality == Legality.NOT_LEGAL) {
+					score.set(-5);
+				} else if(scanToggle.isSelected()) {
+					score = MtgTop8Scores
+							.getScore(collectionCard.getCardName(), compLevels, format, startDate);
 				}
-				return null;
+				return score.asObject();
+			});
+			columnScore.setCellFactory(param -> new TableCell<CollectionCard, Integer>() {
+			    @Override
+			    protected void updateItem(Integer item, boolean empty) {
+			        super.updateItem(item, empty);
+
+			        if (item == null || empty) {
+			            setText(null);
+			            setStyle("");
+			        } else {
+						String text;
+						switch (item) {
+						case -1:
+							text = "Loading..."; break;
+						case SearchEndpoint.NO_MATCH:
+							text = "No match"; break;
+						case SearchEndpoint.TOO_MANY_CARDS:
+							text = "Too many cards"; break;
+						case -4:
+							text = Legality.BANNED.name(); break;
+						case -5:
+							text = Legality.NOT_LEGAL.name(); break;
+						default:
+							text = String.valueOf(item);
+						}
+						setText(text);
+			            // Format date.
+//			            setText(myDateFormatter.format(item));
+
+			            /*
+			            // Style all dates in March with a different color.
+			            if (item.getMonth() == Month.MARCH) {
+			                setTextFill(Color.CHOCOLATE);
+			                setStyle("-fx-background-color: yellow");
+			            } else {
+			                setTextFill(Color.BLACK);
+			                setStyle("");
+			            }
+			            */
+			        }
+			    }
 			});
 			Platform.runLater(() -> cardTable.getColumns().add(columnScore));
 			formatColumns.put(format, columnScore);

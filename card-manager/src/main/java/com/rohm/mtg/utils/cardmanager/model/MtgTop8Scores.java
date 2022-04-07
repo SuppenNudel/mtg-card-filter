@@ -17,30 +17,44 @@ import javafx.beans.property.SimpleIntegerProperty;
 public class MtgTop8Scores {
 
 	private static Map<String, Map<MtgTop8Format, IntegerProperty>> mtgtop8Scores = new HashMap<>();
-	private static ExecutorService executor = Executors.newFixedThreadPool(20);
+	private static ExecutorService executor = Executors.newFixedThreadPool(50);
 
 	private static synchronized IntegerProperty scoreFromMap(String cardName, MtgTop8Format format) {
-		Map<MtgTop8Format, IntegerProperty> formatScores = mtgtop8Scores.get(cardName);
-		if(formatScores == null) {
-			formatScores = new HashMap<>();
-			mtgtop8Scores.put(cardName, formatScores);
+		Map<MtgTop8Format, IntegerProperty> cardScores = mtgtop8Scores.get(cardName);
+		if(cardScores == null) {
+			cardScores = new HashMap<>();
+			mtgtop8Scores.put(cardName, cardScores);
 		}
-		IntegerProperty score = formatScores.get(format);
+		IntegerProperty score = cardScores.get(format);
 		if(score == null) {
-			score = new SimpleIntegerProperty(-1);
-			formatScores.put(format, score);
+			score = new SimpleIntegerProperty(null, cardName+"@"+format, -1);
+			cardScores.put(format, score);
 		}
 		return score;
 	}
 
-	public static IntegerProperty getScore(String cardName, List<CompLevel> compLevels, MtgTop8Format format, LocalDate startDate) {
-		return getScore(cardName, compLevels, format, startDate, true);
+	public synchronized static IntegerProperty getScore(String cardName, List<CompLevel> compLevels, MtgTop8Format format, LocalDate startDate) {
+		IntegerProperty score = scoreFromMap(cardName, format);
+		// TODO adjust cardName before requesting
+		if(score.get() == -1) {
+			executor.execute(() -> {
+				int result = -1;
+				String fixedCardName = cardName;
+				for(int i=0; i < 2 && result < 0;++i) {
+					result = requestScore(fixedCardName, compLevels, format, startDate);
+					if(result == SearchEndpoint.NO_MATCH) {
+						// repeat request with adjusted name
+						fixedCardName = cardName.split("//")[0].trim();
+					}
+				}
+				score.set(result);
+			});
+		}
+		return score;
 	}
 
-	private static IntegerProperty getScore(String cardName, List<CompLevel> compLevels, MtgTop8Format format, LocalDate startDate, boolean retry) {
-		IntegerProperty score = scoreFromMap(cardName, format);
-		executor.execute(() -> {
-			int result = MtgTop8Api.search()
+	private static int requestScore(String cardName, List<CompLevel> compLevels, MtgTop8Format format, LocalDate startDate) {
+		int result = MtgTop8Api.search()
 				.cards(cardName)
 				.compLevel(compLevels)
 				.sideboard(true)
@@ -48,13 +62,7 @@ public class MtgTop8Scores {
 				.format(format)
 				.startdate(startDate)
 				.get();
-			score.set(result);
-			if(result == SearchEndpoint.NO_MATCH) {
-				// repeat request with adjusted name
-				getScore(cardName.split("//")[0].trim(), compLevels, format, startDate, false);
-			}
-		});
-		return score;
+		return result;
 	}
 
 }

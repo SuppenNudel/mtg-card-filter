@@ -5,6 +5,7 @@ import java.util.Properties;
 
 import com.rohm.mtg.utils.cardmanager.gui.PrimaryController;
 
+import de.rohmio.mtg.mtgtop8.api.MtgTop8Api;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -49,6 +50,7 @@ public class App extends Application {
 	}
 
 	public static void main(String[] args) {
+		MtgTop8Api.RATE_LIMIT = 10;
 		launch(args);
 	}
 

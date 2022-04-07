@@ -1,2 +1,2 @@
-java -jar "target\Card Manager-0.0.1.jar"
+java -jar "shade\cardmanager.jar"
 pause
