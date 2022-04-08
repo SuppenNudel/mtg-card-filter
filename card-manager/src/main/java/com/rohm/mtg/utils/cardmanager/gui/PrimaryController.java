@@ -33,16 +33,17 @@ import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -72,21 +73,18 @@ public class PrimaryController implements Initializable {
 	private Map<MtgTop8Format, TableColumn<CollectionCard, Integer>> formatColumns = new HashMap<>();
 
 	private ObservableList<CollectionCard> masterData = FXCollections.observableArrayList();
-	private ObservableList<FilterBlockController> filterBlocks = FXCollections.observableArrayList();
+//	private ObservableList<FilterBlockController> filterBlocks = FXCollections.observableArrayList();
 	private FilteredList<CollectionCard> filteredData;
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		v_filters.getChildrenUnmodifiable().addListener((ListChangeListener<Node>) c -> updatePredicate());
+
 		// 0. Initialize the columns.
-		List<CardValueStrategy<? extends Object>> tableValues = Arrays.asList(
-				CardValueFactory.quantity,
-				CardValueFactory.name,
-				CardValueFactory.setCode,
-				CardValueFactory.cardNumber,
-				CardValueFactory.printing,
-				CardValueFactory.language,
-				CardValueFactory.folder);
+		List<CardValueStrategy<? extends Object>> tableValues = Arrays.asList(CardValueFactory.quantity,
+				CardValueFactory.name, CardValueFactory.setCode, CardValueFactory.cardNumber, CardValueFactory.printing,
+				CardValueFactory.language, CardValueFactory.folder);
 		tableValues.forEach(cvs -> {
 			TableColumn<CollectionCard, String> column = new TableColumn<>(cvs.toString());
 			column.setCellValueFactory(param -> new SimpleObjectProperty(cvs.convert(param.getValue())));
@@ -136,31 +134,33 @@ public class PrimaryController implements Initializable {
 
 	@FXML
 	private void addIfBlock() throws IOException {
-		FilterBlockController ifBlock = new FilterBlockController(v_filters);
+		FilterBlockController filterBlock = new FilterBlockController(this);
 		FXMLLoader fxmlLoader = App.createFxmlLoader(FilterBlockController.class);
-		fxmlLoader.setRoot(ifBlock);
-		fxmlLoader.setController(ifBlock);
+		fxmlLoader.setRoot(filterBlock);
+		fxmlLoader.setController(filterBlock);
 		fxmlLoader.load();
-		filterBlocks.add(ifBlock);
+		v_filters.getChildren().add(filterBlock);
+	}
 
-		List<ObjectProperty<Predicate<CollectionCard>>> collect = filterBlocks.stream().map(FilterBlockController::getPredicate).collect(Collectors.toList());
-		Observable[] array = collect.toArray(new Observable[collect.size()]);
+	public void removeFilterBlock(FilterBlockController filterBlock) {
+		v_filters.getChildren().remove(filterBlock);
+	}
+
+	public void updatePredicate() {
+		List<FilterBlockController> filterBlocks = v_filters.getChildrenUnmodifiable().stream()
+				.map(node -> (FilterBlockController) node).collect(Collectors.toList());
+
+		Observable[] observables = filterBlocks.stream()
+				.map(FilterBlockController::getPredicate).toArray(Observable[]::new);
+
 
 		filteredData.predicateProperty().bind(Bindings.createObjectBinding(() -> {
-		Predicate<CollectionCard> predicate = t -> true;
-			for(FilterBlockController filterBlock : filterBlocks) {
+			Predicate<CollectionCard> predicate = t -> true;
+			for (FilterBlockController filterBlock : filterBlocks) {
 				predicate = predicate.and(filterBlock.getPredicate().get());
 			}
 			return predicate;
-		}, array));
-	}
-
-	@FXML
-	private void removeLastIfBlock() {
-		if (v_filters.getChildren().size() <= 0) {
-			return;
-		}
-		v_filters.getChildren().remove(v_filters.getChildren().size() - 1);
+		}, observables));
 	}
 
 	@FXML
@@ -220,56 +220,56 @@ public class PrimaryController implements Initializable {
 
 				IntegerProperty score = new SimpleIntegerProperty(-1);
 
-				if(legality == Legality.BANNED) {
+				if (legality == Legality.BANNED) {
 					score.set(-4);
-				} else if(legality == Legality.NOT_LEGAL) {
+				} else if (legality == Legality.NOT_LEGAL) {
 					score.set(-5);
-				} else if(scanToggle.isSelected()) {
-					score = MtgTop8Scores
-							.getScore(collectionCard.getCardName(), compLevels, format, startDate);
+				} else if (scanToggle.isSelected()) {
+					score = MtgTop8Scores.getScore(collectionCard.getCardName(), compLevels, format, startDate);
 				}
 				return score.asObject();
 			});
 			columnScore.setCellFactory(param -> new TableCell<CollectionCard, Integer>() {
-			    @Override
-			    protected void updateItem(Integer item, boolean empty) {
-			        super.updateItem(item, empty);
+				@Override
+				protected void updateItem(Integer item, boolean empty) {
+					super.updateItem(item, empty);
 
-			        if (item == null || empty) {
-			            setText(null);
-			            setStyle("");
-			        } else {
+					if (item == null || empty) {
+						setText(null);
+						setStyle("");
+					} else {
 						String text;
 						switch (item) {
 						case -1:
-							text = "Loading..."; break;
+							text = "Loading...";
+							break;
 						case SearchEndpoint.NO_MATCH:
-							text = "No match"; break;
+							text = "No match";
+							break;
 						case SearchEndpoint.TOO_MANY_CARDS:
-							text = "Too many cards"; break;
+							text = "Too many cards";
+							break;
 						case -4:
-							text = Legality.BANNED.name(); break;
+							text = Legality.BANNED.name();
+							break;
 						case -5:
-							text = Legality.NOT_LEGAL.name(); break;
+							text = Legality.NOT_LEGAL.name();
+							break;
 						default:
 							text = String.valueOf(item);
 						}
 						setText(text);
-			            // Format date.
+						// Format date.
 //			            setText(myDateFormatter.format(item));
 
-			            /*
-			            // Style all dates in March with a different color.
-			            if (item.getMonth() == Month.MARCH) {
-			                setTextFill(Color.CHOCOLATE);
-			                setStyle("-fx-background-color: yellow");
-			            } else {
-			                setTextFill(Color.BLACK);
-			                setStyle("");
-			            }
-			            */
-			        }
-			    }
+						/*
+						 * // Style all dates in March with a different color. if (item.getMonth() ==
+						 * Month.MARCH) { setTextFill(Color.CHOCOLATE);
+						 * setStyle("-fx-background-color: yellow"); } else { setTextFill(Color.BLACK);
+						 * setStyle(""); }
+						 */
+					}
+				}
 			});
 			Platform.runLater(() -> cardTable.getColumns().add(columnScore));
 			formatColumns.put(format, columnScore);

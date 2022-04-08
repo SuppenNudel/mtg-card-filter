@@ -24,7 +24,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 
 public class FilterBlockController extends HBox implements Initializable {
 
@@ -37,11 +36,10 @@ public class FilterBlockController extends HBox implements Initializable {
 
 	private static ObservableList<CardValueStrategy<? extends Object>> comparators;
 
-	private VBox parent;
+	private PrimaryController primaryController;
 
-	public FilterBlockController(VBox parent) {
-		this.parent = parent;
-		parent.getChildren().add(this);
+	public FilterBlockController(PrimaryController primaryController) {
+		this.primaryController = primaryController;
 	}
 
 	private static synchronized void loadComparators() {
@@ -100,7 +98,7 @@ public class FilterBlockController extends HBox implements Initializable {
 
 	@FXML
 	private void removeThis() {
-		parent.getChildren().remove(this);
+		primaryController.removeFilterBlock(this);
 	}
 
 	private Predicate<CollectionCard> createNewPredicate() {
