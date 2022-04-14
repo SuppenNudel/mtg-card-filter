@@ -184,18 +184,20 @@ public class PrimaryController implements Initializable {
 	private void loadCardManagerFile() throws IOException {
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setTitle("Choose Dragon Shield Card Manager File");
-//		fileChooser.setInitialDirectory(new File("src/test/resources"));
+		UserConfig config = UserConfig.getConfig();
+		File init_dir = config.get(UserConfigKey.INIT_DIR);
+		fileChooser.setInitialDirectory(init_dir);
 		fileChooser.getExtensionFilters().add(new ExtensionFilter("CSV-File", "*.csv"));
 		File file = fileChooser.showOpenDialog(App.primaryStage());
 		if (file != null) {
-			masterData.clear();
 			CollectionReader collectionReader = DragonShieldReaderFactory.collection(file);
 			List<CollectionCard> cards = collectionReader.getCards(true);
-			masterData.addAll(cards);
+			masterData.setAll(cards);
 
 			Integer totalCards = cards.stream().map(CollectionCard::getQuantity)
 					.collect(Collectors.summingInt(Integer::intValue));
 			lbl_loadedCards.setText(totalCards + " card(s) loaded");
+			config.set(UserConfigKey.INIT_DIR, file.getParentFile());
 		}
 	}
 

@@ -1,5 +1,6 @@
 package com.rohm.mtg.utils.cardmanager.config;
 
+import java.io.File;
 import java.time.temporal.ChronoUnit;
 import java.util.function.Function;
 
@@ -19,6 +20,8 @@ public class UserConfigKey<T> {
 			MtgTop8Format.LEGACY,
 			MtgTop8Format.PAUPER,
 	});
+
+	public static final UserConfigKey<File> INIT_DIR = new UserConfigKey<>("init-dir", File.class, new File("."));
 
 	private String key;
 	private Class<T> type;
