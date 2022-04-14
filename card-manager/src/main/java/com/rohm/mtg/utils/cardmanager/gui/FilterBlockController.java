@@ -131,4 +131,16 @@ public class FilterBlockController extends HBox implements Initializable {
 		return this.getClass()+" "+userValue+" "+operator+" "+cardValueStrategy;
 	}
 
+	public void setOperator(CompareOperator operator) {
+		this.cbOperators.getSelectionModel().select(operator);
+	}
+
+	public void setCardValueStrategy(CardValueStrategy<?> cardValueStrategy) {
+		this.cbComparators.getSelectionModel().select(cardValueStrategy);
+	}
+
+	public void setUserInput(String userInput) {
+		this.userInput.setText(userInput);
+	}
+
 }

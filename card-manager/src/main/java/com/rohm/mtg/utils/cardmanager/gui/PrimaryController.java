@@ -17,6 +17,7 @@ import com.rohm.mtg.utils.cardmanager.App;
 import com.rohm.mtg.utils.cardmanager.config.UserConfig;
 import com.rohm.mtg.utils.cardmanager.config.UserConfigKey;
 import com.rohm.mtg.utils.cardmanager.model.MtgTop8Scores;
+import com.rohm.mtg.utils.cardmanager.sorting.CompareOperator;
 import com.rohm.mtg.utils.cardmanager.sorting.cardvalue.CardValueFactory;
 import com.rohm.mtg.utils.cardmanager.sorting.cardvalue.CardValueStrategy;
 import com.rohm.mtg.utils.dragonshield.DragonShieldReaderFactory;
@@ -59,8 +60,6 @@ import javafx.stage.Stage;
 
 public class PrimaryController implements Initializable {
 
-	private CollectionReader collectionReader;
-
 	@FXML
 	private Label lbl_loadedCards;
 	@FXML
@@ -73,7 +72,6 @@ public class PrimaryController implements Initializable {
 	private Map<MtgTop8Format, TableColumn<CollectionCard, Integer>> formatColumns = new HashMap<>();
 
 	private ObservableList<CollectionCard> masterData = FXCollections.observableArrayList();
-//	private ObservableList<FilterBlockController> filterBlocks = FXCollections.observableArrayList();
 	private FilteredList<CollectionCard> filteredData;
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -97,10 +95,9 @@ public class PrimaryController implements Initializable {
 			TableRow<CollectionCard> row = new TableRow<>();
 			row.setOnMouseClicked(event -> {
 				if (event.getClickCount() == 2 && (!row.isEmpty())) {
-					CollectionCard card = row.getItem();
-					String setCode = CardValueFactory.setCode.convert(card);
-					String url = String.format("https://scryfall.com/card/%s/%s/%s", setCode.toLowerCase(),
-							card.getCardNumber().replace("#", ""), card.getCardName().replace(" // ", " "));
+					CollectionCard item = row.getItem();
+					CardObject cardObject = CardValueFactory.scryfallCards.get(item.getCardName());
+					String url = cardObject.getScryfall_uri();
 					System.out.println("Opening: " + url);
 					App.openBrowser(url);
 				}
@@ -130,16 +127,26 @@ public class PrimaryController implements Initializable {
 				e.printStackTrace();
 			}
 		});
+
+		try {
+			FilterBlockController filterBlock = addIfBlock();
+			filterBlock.setUserInput("0");
+			filterBlock.setCardValueStrategy(CardValueFactory.quantity);
+			filterBlock.setOperator(CompareOperator.GREATER_THAN);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@FXML
-	private void addIfBlock() throws IOException {
+	private FilterBlockController addIfBlock() throws IOException {
 		FilterBlockController filterBlock = new FilterBlockController(this);
 		FXMLLoader fxmlLoader = App.createFxmlLoader(FilterBlockController.class);
 		fxmlLoader.setRoot(filterBlock);
 		fxmlLoader.setController(filterBlock);
 		fxmlLoader.load();
 		v_filters.getChildren().add(filterBlock);
+		return filterBlock;
 	}
 
 	public void removeFilterBlock(FilterBlockController filterBlock) {
@@ -182,7 +189,7 @@ public class PrimaryController implements Initializable {
 		File file = fileChooser.showOpenDialog(App.primaryStage());
 		if (file != null) {
 			masterData.clear();
-			collectionReader = DragonShieldReaderFactory.collection(file);
+			CollectionReader collectionReader = DragonShieldReaderFactory.collection(file);
 			List<CollectionCard> cards = collectionReader.getCards(true);
 			masterData.addAll(cards);
 

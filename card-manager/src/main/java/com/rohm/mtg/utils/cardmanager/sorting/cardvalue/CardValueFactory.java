@@ -15,7 +15,7 @@ import de.rohmio.mtg.scryfall.api.model.enums.Color;
 
 public class CardValueFactory {
 
-	private static Map<String, CardObject> scryfallCards = load();
+	public static Map<String, CardObject> scryfallCards = load();
 
 	private static Map<String, CardObject> load() {
 		try {
