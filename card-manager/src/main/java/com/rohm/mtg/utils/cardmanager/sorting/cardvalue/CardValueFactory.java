@@ -92,6 +92,8 @@ public class CardValueFactory {
 	public static final CardValueStrategy<Double> priceLow = new DoubleValueStrategy("pricelow", "Price Low", CollectionCard::getLow);
 	public static final CardValueStrategy<Double> priceTrend = new DoubleValueStrategy("price, trend", "Price Trend", CollectionCard::getTrend);
 
+	public static final CardValueStrategy<String> setName = new StringValueStrategy("setname", "Set Name", CollectionCard::getSetName);
+
 	public static final Map<String, CardValueStrategy<? extends Object>> allCardValueStrategies = new Supplier<Map<String, CardValueStrategy<? extends Object>>>() {
 		@Override
 		public Map<String, CardValueStrategy<? extends Object>> get() {
@@ -107,6 +109,11 @@ public class CardValueFactory {
 			map.put(priceAvg.getKey(), priceAvg);
 			map.put(priceLow.getKey(), priceLow);
 			map.put(priceTrend.getKey(), priceTrend);
+			map.put(setName.getKey(), setName);
+			map.put(setCode.getKey(), setCode);
+			map.put(language.getKey(), language);
+			map.put(printing.getKey(), printing);
+			map.put(cardNumber.getKey(), cardNumber);
 			return map;
 		}
 	}.get();
