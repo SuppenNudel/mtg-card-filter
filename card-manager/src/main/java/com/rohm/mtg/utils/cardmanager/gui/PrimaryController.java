@@ -81,6 +81,8 @@ public class PrimaryController implements Initializable {
 	private ObservableList<CollectionCard> masterData = FXCollections.observableArrayList();
 	private FilteredList<CollectionCard> filteredData;
 
+	private static final ExtensionFilter filterFileExtensionFilter = new ExtensionFilter("Filter-File", "*.json");
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -224,7 +226,7 @@ public class PrimaryController implements Initializable {
 	private void saveCurrentFilter() {
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setInitialDirectory(UserConfig.getConfig().get(UserConfigKey.INIT_DIR));
-		fileChooser.setSelectedExtensionFilter(new ExtensionFilter("Filter", "*.json"));
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("Filter", "*.json"));
 		File file = fileChooser.showSaveDialog(null);
 		if(file == null) {
 			return;
@@ -242,7 +244,7 @@ public class PrimaryController implements Initializable {
 	private void loadFilter() {
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setInitialDirectory(UserConfig.getConfig().get(UserConfigKey.INIT_DIR));
-		fileChooser.setSelectedExtensionFilter(new ExtensionFilter("Filter", "*.json"));
+		fileChooser.getExtensionFilters().add(filterFileExtensionFilter);
 		File file = fileChooser.showOpenDialog(null);
 		if(file == null) {
 			return;

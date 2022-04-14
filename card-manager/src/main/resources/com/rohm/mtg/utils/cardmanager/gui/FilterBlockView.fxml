@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<fx:root maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" style="-fx-border-color: black;" type="HBox" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root minHeight="-Infinity" minWidth="-Infinity" prefWidth="180.0" spacing="10.0" style="-fx-border-color: black;" type="HBox" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <Button maxHeight="1.7976931348623157E308" mnemonicParsing="false" onAction="#removeThis" text="-">
          <font>
@@ -21,7 +21,7 @@
             <ComboBox fx:id="cbComparators" maxWidth="1.7976931348623157E308" />
             <HBox alignment="CENTER_LEFT" spacing="5.0">
                <children>
-                  <CheckBox fx:id="notCheck" mnemonicParsing="false" text="NOT" />
+                  <CheckBox fx:id="notCheck" minWidth="-Infinity" mnemonicParsing="false" text="NOT" />
                   <ComboBox fx:id="cbOperators" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
