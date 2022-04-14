@@ -12,8 +12,8 @@ public class ListValueStrategy<T> extends CardValueStrategy<List<T>> {
 
 	private Function<String, T> tConverter;
 
-	public ListValueStrategy(String name, Function<CollectionCard, List<T>> converter, Function<String, T> tConverter) {
-		super(name, converter);
+	public ListValueStrategy(String key, String name, Function<CollectionCard, List<T>> converter, Function<String, T> tConverter) {
+		super(key, name, converter);
 		this.tConverter = tConverter;
 	}
 

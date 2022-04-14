@@ -7,8 +7,8 @@ import com.rohm.mtg.utils.dragonshield.collection.CollectionCard;
 
 public class StringValueStrategy extends CardValueStrategy<String> {
 
-	public StringValueStrategy(String name, Function<CollectionCard, String> converter) {
-		super(name, converter);
+	public StringValueStrategy(String key, String name, Function<CollectionCard, String> converter) {
+		super(key, name, converter);
 	}
 
 	@Override

@@ -8,9 +8,11 @@ import com.rohm.mtg.utils.dragonshield.collection.CollectionCard;
 public abstract class CardValueStrategy<T> {
 
 	private String name;
+	private String key;
 	private Function<CollectionCard, T> converter;
 
-	protected CardValueStrategy(String name, Function<CollectionCard, T> converter) {
+	protected CardValueStrategy(String key, String name, Function<CollectionCard, T> converter) {
+		this.key = key;
 		this.name = name;
 		this.converter = converter;
 	}
@@ -18,6 +20,10 @@ public abstract class CardValueStrategy<T> {
 	@Override
 	public String toString() {
 		return name;
+	}
+
+	public String getKey() {
+		return key;
 	}
 
 	public T convert(CollectionCard card) {

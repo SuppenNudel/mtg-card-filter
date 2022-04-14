@@ -7,6 +7,7 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.input.KeyCodeCombination?>
@@ -37,40 +38,44 @@
       </MenuBar>
    </top>
    <center>
-      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" BorderPane.alignment="CENTER">
-         <children>
-            <HBox alignment="CENTER_LEFT" spacing="5.0">
+      <SplitPane dividerPositions="0.5" BorderPane.alignment="CENTER">
+         <items>
+            <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0">
                <children>
-                  <Label fx:id="lbl_loadedCards" text="No file loaded" />
-                  <ToggleButton fx:id="scanToggle" mnemonicParsing="false" text="Scan for Staples" />
+                  <HBox alignment="CENTER_LEFT" spacing="5.0">
+                     <children>
+                        <Label fx:id="lbl_loadedCards" text="No file loaded" />
+                        <ToggleButton fx:id="scanToggle" mnemonicParsing="false" text="Scan for Staples" />
+                        <Label fx:id="lbl_shownCards" text="-" />
+                     </children>
+                  </HBox>
+                  <TableView fx:id="cardTable" prefHeight="0.0" prefWidth="0.0" tableMenuButtonVisible="true" VBox.vgrow="SOMETIMES" />
                </children>
-            </HBox>
-            <TableView fx:id="cardTable" prefHeight="0.0" prefWidth="0.0" tableMenuButtonVisible="true" VBox.vgrow="SOMETIMES" />
-         </children>
-         <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </padding>
-      </VBox>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </VBox>
+            <VBox>
+               <children>
+                  <HBox>
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#addIfBlock" prefHeight="35.0" prefWidth="35.0" text="+">
+                           <font>
+                              <Font name="System Bold" size="15.0" />
+                           </font>
+                        </Button>
+                        <Button mnemonicParsing="false" onAction="#saveCurrentFilter" prefHeight="35.0" text="Save" />
+                        <Button mnemonicParsing="false" onAction="#loadFilter" prefHeight="35.0" text="Load" />
+                     </children>
+                  </HBox>
+                  <ScrollPane fitToWidth="true" hbarPolicy="NEVER" pannable="true" VBox.vgrow="ALWAYS">
+                     <content>
+                        <VBox fx:id="v_filters" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+                     </content>
+                  </ScrollPane>
+               </children>
+            </VBox>
+         </items>
+      </SplitPane>
    </center>
-   <right>
-      <VBox BorderPane.alignment="CENTER">
-         <children>
-            <HBox>
-               <children>
-                  <Button mnemonicParsing="false" onAction="#addIfBlock" prefHeight="35.0" prefWidth="35.0" text="+">
-                     <font>
-                        <Font name="System Bold" size="15.0" />
-                     </font>
-                  </Button>
-                  <Button disable="true" mnemonicParsing="false" prefHeight="35.0" text="Save" />
-               </children>
-            </HBox>
-            <ScrollPane hbarPolicy="NEVER" pannable="true" VBox.vgrow="ALWAYS">
-               <content>
-                  <VBox fx:id="v_filters" />
-               </content>
-            </ScrollPane>
-         </children>
-      </VBox>
-   </right>
 </BorderPane>

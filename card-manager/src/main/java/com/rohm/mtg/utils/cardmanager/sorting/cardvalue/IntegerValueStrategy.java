@@ -7,8 +7,8 @@ import com.rohm.mtg.utils.dragonshield.collection.CollectionCard;
 
 public class IntegerValueStrategy extends CardValueStrategy<Integer> {
 
-	public IntegerValueStrategy(String name, Function<CollectionCard, Integer> converter) {
-		super(name, converter);
+	public IntegerValueStrategy(String key, String name, Function<CollectionCard, Integer> converter) {
+		super(key, name, converter);
 	}
 
 	@Override

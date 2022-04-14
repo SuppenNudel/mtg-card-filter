@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Predicate;
 
+import com.rohm.mtg.utils.cardmanager.config.FilterBlockConfig;
 import com.rohm.mtg.utils.cardmanager.sorting.CompareOperator;
 import com.rohm.mtg.utils.cardmanager.sorting.cardvalue.CardValueFactory;
 import com.rohm.mtg.utils.cardmanager.sorting.cardvalue.CardValueStrategy;
@@ -46,7 +47,7 @@ public class FilterBlockController extends HBox implements Initializable {
 		if (comparators != null) {
 			return;
 		}
-		comparators = FXCollections.observableArrayList(CardValueFactory.allCardValues);
+		comparators = FXCollections.observableArrayList(CardValueFactory.allCardValueStrategies.values());
 		comparators.sort((o1, o2) -> o1.toString().compareTo(o2.toString()));
 	}
 
@@ -135,12 +136,38 @@ public class FilterBlockController extends HBox implements Initializable {
 		this.cbOperators.getSelectionModel().select(operator);
 	}
 
+	public CompareOperator getOperator() {
+		return operator.get();
+	}
+
 	public void setCardValueStrategy(CardValueStrategy<?> cardValueStrategy) {
 		this.cbComparators.getSelectionModel().select(cardValueStrategy);
+	}
+	public CardValueStrategy<?> getCardValueStrategy() {
+		return cardValueStrategy.get();
 	}
 
 	public void setUserInput(String userInput) {
 		this.userInput.setText(userInput);
+	}
+	public String getUserInput() {
+		return userInput.getText();
+	}
+
+	public void setNot(boolean not) {
+		this.notCheck.setSelected(not);
+	}
+	public boolean getNot() {
+		return notCheck.isSelected();
+	}
+
+	public void applyConfig(FilterBlockConfig filterBlockConfig) {
+		String valueStrategyKey = filterBlockConfig.getValueStrategyKey();
+		CardValueStrategy<? extends Object> valueStrategy = CardValueFactory.allCardValueStrategies.get(valueStrategyKey);
+		setCardValueStrategy(valueStrategy);
+		setUserInput(filterBlockConfig.getUserInput());
+		setOperator(filterBlockConfig.getCompareOperator());
+		setNot(filterBlockConfig.isNot());
 	}
 
 }

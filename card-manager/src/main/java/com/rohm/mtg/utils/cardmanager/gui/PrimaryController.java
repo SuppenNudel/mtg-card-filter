@@ -2,6 +2,7 @@ package com.rohm.mtg.utils.cardmanager.gui;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -13,11 +14,15 @@ import java.util.ResourceBundle;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.rohm.mtg.utils.cardmanager.App;
+import com.rohm.mtg.utils.cardmanager.config.FilterBlockConfig;
 import com.rohm.mtg.utils.cardmanager.config.UserConfig;
 import com.rohm.mtg.utils.cardmanager.config.UserConfigKey;
 import com.rohm.mtg.utils.cardmanager.model.MtgTop8Scores;
-import com.rohm.mtg.utils.cardmanager.sorting.CompareOperator;
 import com.rohm.mtg.utils.cardmanager.sorting.cardvalue.CardValueFactory;
 import com.rohm.mtg.utils.cardmanager.sorting.cardvalue.CardValueStrategy;
 import com.rohm.mtg.utils.dragonshield.DragonShieldReaderFactory;
@@ -63,6 +68,8 @@ public class PrimaryController implements Initializable {
 	@FXML
 	private Label lbl_loadedCards;
 	@FXML
+	private Label lbl_shownCards;
+	@FXML
 	private ToggleButton scanToggle;
 	@FXML
 	private VBox v_filters;
@@ -82,7 +89,7 @@ public class PrimaryController implements Initializable {
 		// 0. Initialize the columns.
 		List<CardValueStrategy<? extends Object>> tableValues = Arrays.asList(CardValueFactory.quantity,
 				CardValueFactory.name, CardValueFactory.setCode, CardValueFactory.cardNumber, CardValueFactory.printing,
-				CardValueFactory.language, CardValueFactory.folder);
+				CardValueFactory.language, CardValueFactory.folder, CardValueFactory.priceBought, CardValueFactory.priceAvg, CardValueFactory.priceLow, CardValueFactory.priceTrend);
 		tableValues.forEach(cvs -> {
 			TableColumn<CollectionCard, String> column = new TableColumn<>(cvs.toString());
 			column.setCellValueFactory(param -> new SimpleObjectProperty(cvs.convert(param.getValue())));
@@ -96,8 +103,10 @@ public class PrimaryController implements Initializable {
 			row.setOnMouseClicked(event -> {
 				if (event.getClickCount() == 2 && (!row.isEmpty())) {
 					CollectionCard item = row.getItem();
-					CardObject cardObject = CardValueFactory.scryfallCards.get(item.getCardName());
-					String url = cardObject.getScryfall_uri();
+//					CardObject cardObject = CardValueFactory.scryfallCards.get(item.getCardName());
+					String url = String.format("https://scryfall.com/card/%s/%s/%s", item.getSetCode().toLowerCase(),
+                            item.getCardNumber().replace("#", ""), item.getCardName().replace(" // ", " "));
+//					String url = cardObject.getScryfall_uri();
 					System.out.println("Opening: " + url);
 					App.openBrowser(url);
 				}
@@ -107,6 +116,13 @@ public class PrimaryController implements Initializable {
 
 		// 1. Wrap the ObservableList in a FilteredList (initially display all data).
 		filteredData = new FilteredList<>(masterData, p -> true);
+
+		lbl_shownCards.textProperty().bind(Bindings.createStringBinding(() -> {
+
+			Integer totalCards = filteredData.stream().map(CollectionCard::getQuantity)
+					.collect(Collectors.summingInt(Integer::intValue));
+			return filteredData.size()+ " rows(s), "+totalCards+" card(s) shown";
+		}, filteredData));
 
 		// 2. Set the filter Predicate whenever the filter changes.
 		// done in FilterBlockController.updatePredicate
@@ -128,25 +144,23 @@ public class PrimaryController implements Initializable {
 			}
 		});
 
-		try {
-			FilterBlockController filterBlock = addIfBlock();
-			filterBlock.setUserInput("0");
-			filterBlock.setCardValueStrategy(CardValueFactory.quantity);
-			filterBlock.setOperator(CompareOperator.GREATER_THAN);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		addIfBlock();
 	}
 
 	@FXML
-	private FilterBlockController addIfBlock() throws IOException {
+	private FilterBlockController addIfBlock() {
 		FilterBlockController filterBlock = new FilterBlockController(this);
-		FXMLLoader fxmlLoader = App.createFxmlLoader(FilterBlockController.class);
-		fxmlLoader.setRoot(filterBlock);
-		fxmlLoader.setController(filterBlock);
-		fxmlLoader.load();
-		v_filters.getChildren().add(filterBlock);
-		return filterBlock;
+		try {
+			FXMLLoader fxmlLoader = App.createFxmlLoader(FilterBlockController.class);
+			fxmlLoader.setRoot(filterBlock);
+			fxmlLoader.setController(filterBlock);
+			fxmlLoader.load();
+			v_filters.getChildren().add(filterBlock);
+			return filterBlock;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public void removeFilterBlock(FilterBlockController filterBlock) {
@@ -154,8 +168,7 @@ public class PrimaryController implements Initializable {
 	}
 
 	public void updatePredicate() {
-		List<FilterBlockController> filterBlocks = v_filters.getChildrenUnmodifiable().stream()
-				.map(node -> (FilterBlockController) node).collect(Collectors.toList());
+		List<FilterBlockController> filterBlocks = getAllFilterBlocks();
 
 		Observable[] observables = filterBlocks.stream()
 				.map(FilterBlockController::getPredicate).toArray(Observable[]::new);
@@ -168,6 +181,12 @@ public class PrimaryController implements Initializable {
 			}
 			return predicate;
 		}, observables));
+	}
+
+	private List<FilterBlockController> getAllFilterBlocks() {
+		List<FilterBlockController> filterBlocks = v_filters.getChildrenUnmodifiable().stream()
+				.map(node -> (FilterBlockController) node).collect(Collectors.toList());
+		return filterBlocks;
 	}
 
 	@FXML
@@ -203,7 +222,47 @@ public class PrimaryController implements Initializable {
 
 	@FXML
 	private void saveCurrentFilter() {
-		// TODO
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setInitialDirectory(UserConfig.getConfig().get(UserConfigKey.INIT_DIR));
+		fileChooser.setSelectedExtensionFilter(new ExtensionFilter("Filter", "*.json"));
+		File file = fileChooser.showSaveDialog(null);
+		if(file == null) {
+			return;
+		}
+		List<FilterBlockConfig> collect = getAllFilterBlocks().stream().map(block -> new FilterBlockConfig(block.getUserInput(), block.getCardValueStrategy().getKey(), block.getOperator(), block.getNot())).collect(Collectors.toList());
+		String json = new Gson().toJson(collect);
+		try {
+			FileUtils.writeStringToFile(file, json, "UTF-8", false);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@FXML
+	private void loadFilter() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setInitialDirectory(UserConfig.getConfig().get(UserConfigKey.INIT_DIR));
+		fileChooser.setSelectedExtensionFilter(new ExtensionFilter("Filter", "*.json"));
+		File file = fileChooser.showOpenDialog(null);
+		if(file == null) {
+			return;
+		}
+		Type type = new TypeToken<List<FilterBlockConfig>>(){}.getType();
+		String json = null;
+		try {
+			json = FileUtils.readFileToString(file, "UTF-8");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		if(json == null) {
+			return;
+		}
+		List<FilterBlockConfig> filterBlockConfigs = new Gson().fromJson(json, type);
+		v_filters.getChildren().clear();
+		for(FilterBlockConfig filterBlockConfig : filterBlockConfigs) {
+			FilterBlockController ifBlock = addIfBlock();
+			ifBlock.applyConfig(filterBlockConfig);
+		}
 	}
 
 	private void scanForStaples() throws IOException {
